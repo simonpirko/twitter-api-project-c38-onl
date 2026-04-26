@@ -39,6 +39,6 @@ public class ChannelService {
             return channelRepository.save(channel);
         }
 
-        throw new EntityNotFoundException("Channel not found with id " + id);
+        throw new EntityNotFoundException("Channel not found with id: " + id);
     }
 }
