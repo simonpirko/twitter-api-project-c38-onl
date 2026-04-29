@@ -89,9 +89,6 @@ public class TokenService {
                 .map(GrantedAuthority::getAuthority)
                 .collect(Collectors.toList());
 
-        System.out.println("roles");
-        System.out.println(roles);
-
         String accessToken = generateAccessToken(email, account.getId(), roles);
         String refreshToken = generateRefreshToken(email, account.getId(), roles);
 

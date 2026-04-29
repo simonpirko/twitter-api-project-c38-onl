@@ -55,7 +55,7 @@ public class AccountController {
     public ResponseEntity<?> refresh(@Valid @RequestBody RefreshTokenRequestDTO refreshRequest) {
         try {
             AuthResponseDTO newTokens = tokenService.refreshAccessToken(refreshRequest.getRefreshToken());
-            System.out.println(newTokens);
+
             return ResponseEntity.ok(newTokens);
         } catch (InternalAuthenticationServiceException e) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
