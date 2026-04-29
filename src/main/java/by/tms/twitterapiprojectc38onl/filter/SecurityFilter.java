@@ -46,8 +46,10 @@ public class SecurityFilter extends OncePerRequestFilter {
 
 
                 List roles = body.get("roles", List.class);
+                Long accountId = body.get("accountId", Long.class);
 
                 Account account = new Account();
+                account.setId(accountId);
                 account.setUsername(body.getSubject());
 
                 Set<Role> roleSet = new HashSet<>();
