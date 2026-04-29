@@ -3,10 +3,10 @@ package by.tms.twitterapiprojectc38onl.filter;
 
 import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.Role;
+import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtParser;
 import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.security.Keys;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -14,16 +14,14 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.security.authentication.InternalAuthenticationServiceException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import javax.crypto.SecretKey;
 import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class SecurityFilter extends OncePerRequestFilter {
@@ -37,8 +35,6 @@ public class SecurityFilter extends OncePerRequestFilter {
         String header = request.getHeader("Authorization");;
 
         if ( Objects.nonNull(header) && header.startsWith(PREFIX_TOKEN)) {
-            System.out.println("hereeeee");
-
             String token = header.substring(PREFIX_TOKEN.length());
 
             JwtParser parser = Jwts.parserBuilder()
@@ -63,8 +59,12 @@ public class SecurityFilter extends OncePerRequestFilter {
 
                 account.setRoles(roleSet);
 
+                Collection<? extends GrantedAuthority> authorities = account.getAuthorities();
+
                 UsernamePasswordAuthenticationToken usernamePasswordAuthenticationToken =
-                        new UsernamePasswordAuthenticationToken(account, token, null);
+                        new UsernamePasswordAuthenticationToken(account, token, authorities);
+
+
                 SecurityContextHolder.getContext().setAuthentication(usernamePasswordAuthenticationToken);
 
             } catch (ExpiredJwtException e) {

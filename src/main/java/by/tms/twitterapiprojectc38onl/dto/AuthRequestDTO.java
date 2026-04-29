@@ -5,7 +5,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 @Data
-public class AuthDTO {
+public class AuthRequestDTO {
     @NotBlank(message = "The Email cannot be blank")
     @Email(message = "Invalid email format")
     private String email;
