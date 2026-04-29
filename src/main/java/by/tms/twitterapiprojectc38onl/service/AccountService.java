@@ -9,7 +9,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.Optional;
@@ -20,9 +19,6 @@ public class AccountService implements UserDetailsService {
 
     @Autowired
     private AccountRepository accountRepository;
-
-    @Autowired
-    private PasswordEncoder passwordEncoder;
 
     public Account save(RegisterDTO registerDTO) {
         Account account = new Account();
@@ -45,7 +41,7 @@ public class AccountService implements UserDetailsService {
         throw new UsernameNotFoundException("User not found");
     }
 
-    public UserDetails loadUserByEmail(String email) throws UsernameNotFoundException {
+    public Account loadUserByEmail(String email) throws UsernameNotFoundException {
         Optional<Account> byEmail = accountRepository.findByEmail(email);
 
         if (byEmail.isPresent()) {
