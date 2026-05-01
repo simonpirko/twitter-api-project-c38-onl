@@ -18,15 +18,12 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class TokenService {
-    @Value("${jwt.access.expiration:120000}")
+    @Value("${jwt.access.expiration:600000}")
     private long accessExpiration;
 
     @Value("${jwt.refresh.expiration:604800000}")
@@ -127,7 +124,7 @@ public class TokenService {
         }
     }
 
-    public AuthResponseDTO refreshAccessToken(String refreshToken) {
+    public Optional<AuthResponseDTO> refreshAccessToken(String refreshToken) {
         try {
             Claims claims = this.validateToken(refreshToken);
 
@@ -145,7 +142,7 @@ public class TokenService {
             String newAccessToken = generateAccessToken(email, accountId, roles);
             String newRefreshToken = generateRefreshToken(email, accountId, roles);
 
-            return new AuthResponseDTO(newAccessToken, newRefreshToken);
+            return Optional.of(new AuthResponseDTO(newAccessToken, newRefreshToken));
 
         } catch (ExpiredJwtException e) {
             throw new InternalAuthenticationServiceException("Refresh token expired");
