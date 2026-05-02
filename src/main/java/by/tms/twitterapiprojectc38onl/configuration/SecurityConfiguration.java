@@ -46,6 +46,8 @@ public class SecurityConfiguration {
                                 .requestMatchers(HttpMethod.POST,  "/accounts/register").permitAll()
                                 .requestMatchers(HttpMethod.POST,  "/accounts/auth").permitAll()
                                 .requestMatchers(HttpMethod.POST,  "/accounts/refresh").permitAll()
+                                .requestMatchers(HttpMethod.POST,  "/posts").permitAll()
+                                .requestMatchers("/posts/**").permitAll()
                                 .anyRequest().authenticated())
                 .sessionManagement(c -> c.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .exceptionHandling(c -> c.authenticationEntryPoint(authenticationEntryPoint()))
