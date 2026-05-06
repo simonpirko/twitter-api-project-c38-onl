@@ -4,6 +4,7 @@ package by.tms.twitterapiprojectc38onl.service;
 import by.tms.twitterapiprojectc38onl.controller.AuthResponseDTO;
 import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.RefreshToken;
+import by.tms.twitterapiprojectc38onl.repository.AccountRepository;
 import by.tms.twitterapiprojectc38onl.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -33,6 +34,10 @@ public class TokenService {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
     @Autowired
     private ApplicationContext applicationContext;
 
@@ -131,13 +136,21 @@ public class TokenService {
             if (!"refresh".equals(claims.get("type"))) {
                 throw new InternalAuthenticationServiceException("Invalid token type");
             }
+            Long accountId = getAccountIdFromToken(refreshToken);
 
+            Optional<Account> account = accountRepository.findById(accountId);
+
+            if (!account.isPresent()) {
+                throw new RuntimeException("User not found");
+            }
             String tokenId = claims.getId();
             String email = claims.getSubject();
-            Long accountId = claims.get("accountId", Long.class);
-            List<String> roles = claims.get("roles", List.class);
 
             refreshTokenRepository.deleteByToken(tokenId);
+
+            List<String> roles = account.get().getRoles().stream()
+                    .map(Enum::name)
+                    .toList();
 
             String newAccessToken = generateAccessToken(email, accountId, roles);
             String newRefreshToken = generateRefreshToken(email, accountId, roles);
@@ -155,5 +168,14 @@ public class TokenService {
     @Transactional
     public void cleanupExpiredTokens() {
         refreshTokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
+    }
+
+    public Long getAccountIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(generateKey())
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("accountId", Long.class);
     }
 }

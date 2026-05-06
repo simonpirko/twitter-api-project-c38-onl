@@ -7,4 +7,5 @@ import java.util.Collection;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
     Collection<Post> findByAccountId(Long accountId);
+    Long findAccountIdById(Long postId);
 }
