@@ -6,19 +6,12 @@ import by.tms.twitterapiprojectc38onl.dto.PostUpdateDTO;
 import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.Channel;
 import by.tms.twitterapiprojectc38onl.entity.Post;
-import by.tms.twitterapiprojectc38onl.repository.AccountRepository;
 import by.tms.twitterapiprojectc38onl.repository.ChannelRepository;
 import by.tms.twitterapiprojectc38onl.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.parser.Entity;
+import java.util.Collection;
 import java.util.List;
 
 @Service
@@ -30,21 +23,18 @@ public class PostService {
     @Autowired
     private ChannelRepository channelRepository;
 
-    public PostResponseDTO create(PostCreateDTO dto, Account account) {
+    public Post create(PostCreateDTO dto, Account account) {
 
         Post post = new Post();
         post.setTitle(dto.getTitle());
         post.setDescription(dto.getDescription());
         post.setImageUrls(dto.getImageUrls());
         post.setAccount(account);
+        Channel channel = channelRepository.findById(dto.getChannelId())
+                .orElseThrow(() -> new RuntimeException("Channel not found"));
+        post.setChannel(channel);
 
-        if (dto.getChannelId() != null){
-            post.setChannel(channelRepository.getReferenceById(dto.getChannelId()));
-        }
-
-        postRepository.save(post);
-
-        return mapToResponse(post);
+        return postRepository.save(post);
     }
 
     public PostResponseDTO updatePostPartial(Long id, PostUpdateDTO dto) {
@@ -104,5 +94,9 @@ public class PostService {
         }
 
         return dto;
+    }
+
+    public Collection<Post> getPostsByAccountId(Long accountId) {
+        return postRepository.findByAccountId(accountId);
     }
 }

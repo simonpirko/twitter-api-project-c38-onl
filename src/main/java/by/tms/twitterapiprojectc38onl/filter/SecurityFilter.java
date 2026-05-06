@@ -50,7 +50,7 @@ public class SecurityFilter extends OncePerRequestFilter {
 
                 Account account = new Account();
                 account.setId(accountId);
-                account.setUsername(body.getSubject());
+                account.setEmail(body.getSubject());
 
                 Set<Role> roleSet = new HashSet<>();
 

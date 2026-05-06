@@ -32,6 +32,7 @@ public class Account implements UserDetails {
 
     @NotBlank(message = "The password cannot be blank")
     @Size(min = 8, message = "The password must contain at least 8 characters")
+    @JsonIgnore
     private String password;
 
     @ElementCollection(fetch = FetchType.EAGER)

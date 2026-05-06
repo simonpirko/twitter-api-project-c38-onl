@@ -8,17 +8,20 @@ import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.Post;
 import by.tms.twitterapiprojectc38onl.repository.PostRepository;
 import by.tms.twitterapiprojectc38onl.service.PostService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
+@Tag(name = "Posts")
 @RestController
 @RequestMapping("/posts")
 public class PostController {
-
     @Autowired
     PostRepository postRepository;
 
@@ -34,17 +37,16 @@ public class PostController {
         return postService.mapToResponse(post);
     }
 
-    @GetMapping()
+    @GetMapping
     public List<PostResponseDTO> getAllPosts(){
-
         return postService.getAll();
     }
 
     @PostMapping
-    public ResponseEntity<PostResponseDTO> createPost(@RequestBody PostCreateDTO postCreateDTO,
+    @Operation(summary = "To add new post", description = "This method return created post")
+    public ResponseEntity<Post> createPost(@RequestBody PostCreateDTO postCreateDTO,
                                            @AuthenticationPrincipal Account account){
-
-        return ResponseEntity.ok(postService.create(postCreateDTO, account));
+        return ResponseEntity.status(HttpStatus.CREATED).body(postService.create(postCreateDTO, account));
     }
 
     @PatchMapping("/{post_id}")

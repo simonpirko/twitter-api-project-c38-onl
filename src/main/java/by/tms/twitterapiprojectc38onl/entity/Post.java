@@ -13,7 +13,6 @@ import java.util.List;
 @Setter
 @ToString
 public class Post {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
