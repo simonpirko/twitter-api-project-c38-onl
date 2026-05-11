@@ -3,23 +3,20 @@ package by.tms.twitterapiprojectc38onl.service;
 import by.tms.twitterapiprojectc38onl.dto.PostCreateDTO;
 import by.tms.twitterapiprojectc38onl.dto.PostResponseDTO;
 import by.tms.twitterapiprojectc38onl.dto.PostUpdateDTO;
-import by.tms.twitterapiprojectc38onl.entity.Account;
-import by.tms.twitterapiprojectc38onl.entity.Channel;
-import by.tms.twitterapiprojectc38onl.entity.Post;
-import by.tms.twitterapiprojectc38onl.repository.AccountRepository;
+import by.tms.twitterapiprojectc38onl.entity.*;
 import by.tms.twitterapiprojectc38onl.repository.ChannelRepository;
+import by.tms.twitterapiprojectc38onl.repository.ReactionRepository;
+import by.tms.twitterapiprojectc38onl.exception.AccessDeniedException;
+import by.tms.twitterapiprojectc38onl.repository.ChannelRepository;
+import by.tms.twitterapiprojectc38onl.repository.ReactionRepository;
 import by.tms.twitterapiprojectc38onl.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.RequestEntity;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.User;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 
-import javax.swing.text.html.parser.Entity;
+import java.util.Collection;
 import java.util.List;
+import java.util.Objects;
+import java.util.Set;
 
 @Service
 public class PostService {
@@ -30,6 +27,9 @@ public class PostService {
     @Autowired
     private ChannelRepository channelRepository;
 
+    @Autowired
+    private ReactionRepository reactionRepository;
+
     public PostResponseDTO create(PostCreateDTO dto, Account account) {
 
         Post post = new Post();
@@ -37,29 +37,30 @@ public class PostService {
         post.setDescription(dto.getDescription());
         post.setImageUrls(dto.getImageUrls());
         post.setAccount(account);
+        Channel channel = channelRepository.findById(dto.getChannelId())
+                .orElseThrow(() -> new RuntimeException("Channel not found"));
+        post.setChannel(channel);
 
-        if (dto.getChannelId() != null){
-            post.setChannel(channelRepository.getReferenceById(dto.getChannelId()));
-        }
-
-        postRepository.save(post);
-
-        return mapToResponse(post);
+        return postRepository.save(post);
     }
 
-    public PostResponseDTO updatePostPartial(Long id, PostUpdateDTO dto) {
+    public PostResponseDTO updatePostPartial(Long id, PostUpdateDTO dto, Account account) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
 
-        if (dto.getTitle() != null) {
+        if (!Objects.equals(post.getAccount().getId(), account.getId())) {
+            throw new AccessDeniedException("Access denied");
+        }
+
+        if (Objects.nonNull(dto.getTitle())) {
             post.setTitle(dto.getTitle());
         }
 
-        if (dto.getDescription() != null) {
+        if (Objects.nonNull(dto.getDescription())) {
             post.setDescription(dto.getDescription());
         }
 
-        if (dto.getImageUrls() != null) {
+        if (Objects.nonNull(dto.getImageUrls())) {
             post.setImageUrls(dto.getImageUrls());
         }
 
@@ -76,10 +77,53 @@ public class PostService {
                 .toList();
     }
 
-    public void delete(Long id){
+    public void delete(Long id) {
 
         if(!postRepository.existsById(id)){
             throw new RuntimeException("Post not found");
+        }
+
+        postRepository.deleteById(id);
+    }
+
+    public void likePost(Long postId, Account account) {
+        setPostReaction(postId, account, ReactionType.LIKE);
+    }
+
+    public void dislikePost(Long postId, Account account) {
+        setPostReaction(postId, account, ReactionType.DISLIKE);
+    }
+
+    private void setPostReaction(Long postId, Account account, ReactionType reactionType) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Reaction reaction = reactionRepository.findByAccountIdAndPostId(account.getId(), postId)
+                .orElseGet(() -> {
+                    Reaction newReaction = new Reaction();
+                    newReaction.setAccount(account);
+                    newReaction.setPost(post);
+                    return newReaction;
+                });
+
+        reaction.setType(reactionType);
+        reactionRepository.save(reaction);
+
+        mapToResponse(post);
+    }
+
+    public void delete(Long id, Account account) {
+        Post post = postRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+
+        Set<Role> roles = account.getRoles();
+
+        boolean isAdminOrModerator = roles.contains(Role.ROLE_ADMIN) || roles.contains(Role.ROLE_MODERATOR);
+        boolean isOwner = Objects.equals(post.getAccount().getId(), account.getId());
+
+        if (!isAdminOrModerator && !isOwner) {
+            throw new AccessDeniedException("Access denied");
         }
 
         postRepository.deleteById(id);
@@ -98,11 +142,18 @@ public class PostService {
         dto.setAccountId(post.getAccount().getId());
         dto.setUsername(post.getAccount().getUsername());
 
+        dto.setLikesCount(reactionRepository.countByPostIdAndType(post.getId(), ReactionType.LIKE));
+        dto.setDislikesCount(reactionRepository.countByPostIdAndType(post.getId(), ReactionType.DISLIKE));
+
         if(post.getChannel() != null){
             dto.setChannelId(post.getChannel().getId());
             dto.setChannelName(post.getChannel().getChannelName());
         }
 
         return dto;
+    }
+
+    public Collection<Post> getPostsByAccountId(Long accountId) {
+        return postRepository.findByAccountId(accountId);
     }
 }

@@ -13,7 +13,6 @@ import java.util.List;
 @Setter
 @ToString
 public class Channel {
-
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -24,11 +23,9 @@ public class Channel {
     @NotBlank
     private String channelDescription;
 
-    @NotBlank
-    private Long channelOwnerId;
-
-    @NotBlank
-    private Long channelModeratorId;
+    @ManyToOne
+    @JoinColumn(name = "account_id")
+    private Account account;
 
     @OneToMany
     private List<Post> channelPosts;

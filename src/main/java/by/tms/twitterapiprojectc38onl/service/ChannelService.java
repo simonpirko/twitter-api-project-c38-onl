@@ -24,13 +24,12 @@ public class ChannelService {
     @Autowired
     private PostRepository postRepository;
 
-    public Channel save(CreateChannelDTO channelDTO) {
+    public Channel save(CreateChannelDTO channelDTO, Account account) {
         Channel channel = new Channel();
 
         channel.setChannelName(channelDTO.getChannelName());
         channel.setChannelDescription(channelDTO.getChannelDescription());
-        channel.setChannelOwnerId(channelDTO.getChannelOwnerId());
-        channel.setChannelModeratorId(channelDTO.getChannelModeratorId());
+        channel.setAccount(account);
 
         return channelRepository.save(channel);
     }
@@ -42,7 +41,6 @@ public class ChannelService {
             Channel channel = byId.get();
             channel.setChannelName(channelDTO.getChannelName());
             channel.setChannelDescription(channelDTO.getChannelDescription());
-            channel.setChannelModeratorId(channelDTO.getChannelModeratorId());
 
             return channelRepository.save(channel);
         }
