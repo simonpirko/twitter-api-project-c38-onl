@@ -13,6 +13,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,6 +44,7 @@ public class PostController {
     }
 
     @PostMapping
+    @PreAuthorize("hasRole('ROLE_AUTHOR')")
     @Operation(summary = "To add new post", description = "This method return created post")
     public ResponseEntity<Post> createPost(@RequestBody PostCreateDTO postCreateDTO,
                                            @AuthenticationPrincipal Account account){
@@ -50,15 +52,20 @@ public class PostController {
     }
 
     @PatchMapping("/{post_id}")
+    @PreAuthorize("hasRole('ROLE_AUTHOR')")
     public ResponseEntity<PostResponseDTO> updatePostById(@PathVariable Long post_id,
-                                               @RequestBody PostUpdateDTO postUpdateDTO) {
+                                               @RequestBody PostUpdateDTO postUpdateDTO, @AuthenticationPrincipal Account account) {
 
-        return ResponseEntity.ok(postService.updatePostPartial(post_id, postUpdateDTO));
+        return ResponseEntity.ok(postService.updatePostPartial(post_id, postUpdateDTO, account));
     }
 
     @DeleteMapping("/{post_id}")
-    public ResponseEntity<Void> deletePostById(@PathVariable Long post_id) {
-        postService.delete(post_id);
+    @PreAuthorize("hasAnyRole('AUTHOR', 'ADMIN', 'MODERATOR')")
+    @Operation(summary = "Delete post by specified id", description = "this method return nothing")
+    public ResponseEntity<Void> deletePostById(@PathVariable Long post_id, @AuthenticationPrincipal Account account) {
+        System.out.println("test");
+        System.out.println(account);
+        postService.delete(post_id, account);
         return ResponseEntity.noContent().build();
     }
 }
