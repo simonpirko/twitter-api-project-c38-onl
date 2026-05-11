@@ -19,4 +19,7 @@ public class PostResponseDTO {
 
     private Long channelId;
     private String channelName;
+
+    private long likesCount;
+    private long dislikesCount;
 }

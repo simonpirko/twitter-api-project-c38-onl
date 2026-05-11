@@ -3,12 +3,12 @@ package by.tms.twitterapiprojectc38onl.service;
 import by.tms.twitterapiprojectc38onl.dto.PostCreateDTO;
 import by.tms.twitterapiprojectc38onl.dto.PostResponseDTO;
 import by.tms.twitterapiprojectc38onl.dto.PostUpdateDTO;
-import by.tms.twitterapiprojectc38onl.entity.Account;
-import by.tms.twitterapiprojectc38onl.entity.Channel;
-import by.tms.twitterapiprojectc38onl.entity.Post;
-import by.tms.twitterapiprojectc38onl.entity.Role;
+import by.tms.twitterapiprojectc38onl.entity.*;
+import by.tms.twitterapiprojectc38onl.repository.ChannelRepository;
+import by.tms.twitterapiprojectc38onl.repository.ReactionRepository;
 import by.tms.twitterapiprojectc38onl.exception.AccessDeniedException;
 import by.tms.twitterapiprojectc38onl.repository.ChannelRepository;
+import by.tms.twitterapiprojectc38onl.repository.ReactionRepository;
 import by.tms.twitterapiprojectc38onl.repository.PostRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -27,7 +27,10 @@ public class PostService {
     @Autowired
     private ChannelRepository channelRepository;
 
-    public Post create(PostCreateDTO dto, Account account) {
+    @Autowired
+    private ReactionRepository reactionRepository;
+
+    public PostResponseDTO create(PostCreateDTO dto, Account account) {
 
         Post post = new Post();
         post.setTitle(dto.getTitle());
@@ -74,6 +77,41 @@ public class PostService {
                 .toList();
     }
 
+    public void delete(Long id) {
+
+        if(!postRepository.existsById(id)){
+            throw new RuntimeException("Post not found");
+        }
+
+        postRepository.deleteById(id);
+    }
+
+    public void likePost(Long postId, Account account) {
+        setPostReaction(postId, account, ReactionType.LIKE);
+    }
+
+    public void dislikePost(Long postId, Account account) {
+        setPostReaction(postId, account, ReactionType.DISLIKE);
+    }
+
+    private void setPostReaction(Long postId, Account account, ReactionType reactionType) {
+        Post post = postRepository.findById(postId)
+                .orElseThrow(() -> new RuntimeException("Post not found"));
+
+        Reaction reaction = reactionRepository.findByAccountIdAndPostId(account.getId(), postId)
+                .orElseGet(() -> {
+                    Reaction newReaction = new Reaction();
+                    newReaction.setAccount(account);
+                    newReaction.setPost(post);
+                    return newReaction;
+                });
+
+        reaction.setType(reactionType);
+        reactionRepository.save(reaction);
+
+        mapToResponse(post);
+    }
+
     public void delete(Long id, Account account) {
         Post post = postRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Post not found"));
@@ -104,7 +142,10 @@ public class PostService {
         dto.setAccountId(post.getAccount().getId());
         dto.setUsername(post.getAccount().getUsername());
 
-        if(Objects.nonNull(post.getChannel())){
+        dto.setLikesCount(reactionRepository.countByPostIdAndType(post.getId(), ReactionType.LIKE));
+        dto.setDislikesCount(reactionRepository.countByPostIdAndType(post.getId(), ReactionType.DISLIKE));
+
+        if(post.getChannel() != null){
             dto.setChannelId(post.getChannel().getId());
             dto.setChannelName(post.getChannel().getChannelName());
         }

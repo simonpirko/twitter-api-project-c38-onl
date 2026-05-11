@@ -38,6 +38,9 @@ public class PostController {
         return postService.mapToResponse(post);
     }
 
+    @Autowired
+    private PostService postService;
+
     @GetMapping
     public List<PostResponseDTO> getAllPosts(){
         return postService.getAll();
@@ -67,5 +70,23 @@ public class PostController {
         System.out.println(account);
         postService.delete(post_id, account);
         return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/{postId}/like")
+    public ResponseEntity<?> likePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal Account account
+    ) {
+        postService.likePost(postId, account);
+        return ResponseEntity.status(HttpStatus.OK).build();
+    }
+
+    @PostMapping("/{postId}/dislike")
+    public ResponseEntity<?> dislikePost(
+            @PathVariable Long postId,
+            @AuthenticationPrincipal Account account
+    ) {
+        postService.dislikePost(postId, account);
+        return ResponseEntity.status(HttpStatus.OK).build();
     }
 }

@@ -33,4 +33,7 @@ public class Post {
     @ManyToOne
     @JoinColumn(name = "channel_id")
     private Channel channel;
+
+    @OneToMany(mappedBy = "post", orphanRemoval = true)
+    private List<Reaction> likes;
 }
