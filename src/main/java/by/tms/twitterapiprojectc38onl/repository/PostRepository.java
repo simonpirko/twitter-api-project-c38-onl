@@ -4,4 +4,5 @@ import by.tms.twitterapiprojectc38onl.entity.Post;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 public interface PostRepository extends JpaRepository<Post, Long> {
+    void deleteAllByChannel_Id(Long channelId);
 }
