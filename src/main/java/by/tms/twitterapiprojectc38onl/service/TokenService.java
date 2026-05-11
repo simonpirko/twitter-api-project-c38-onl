@@ -4,6 +4,7 @@ package by.tms.twitterapiprojectc38onl.service;
 import by.tms.twitterapiprojectc38onl.controller.AuthResponseDTO;
 import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.RefreshToken;
+import by.tms.twitterapiprojectc38onl.repository.AccountRepository;
 import by.tms.twitterapiprojectc38onl.repository.RefreshTokenRepository;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -18,15 +19,12 @@ import org.springframework.stereotype.Service;
 
 import javax.crypto.SecretKey;
 import java.time.LocalDateTime;
-import java.util.Collection;
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 public class TokenService {
-    @Value("${jwt.access.expiration:120000}")
+    @Value("${jwt.access.expiration:600000}")
     private long accessExpiration;
 
     @Value("${jwt.refresh.expiration:604800000}")
@@ -36,6 +34,10 @@ public class TokenService {
 
     @Autowired
     private RefreshTokenRepository refreshTokenRepository;
+
+    @Autowired
+    private AccountRepository accountRepository;
+
     @Autowired
     private ApplicationContext applicationContext;
 
@@ -127,25 +129,33 @@ public class TokenService {
         }
     }
 
-    public AuthResponseDTO refreshAccessToken(String refreshToken) {
+    public Optional<AuthResponseDTO> refreshAccessToken(String refreshToken) {
         try {
             Claims claims = this.validateToken(refreshToken);
 
             if (!"refresh".equals(claims.get("type"))) {
                 throw new InternalAuthenticationServiceException("Invalid token type");
             }
+            Long accountId = getAccountIdFromToken(refreshToken);
 
+            Optional<Account> account = accountRepository.findById(accountId);
+
+            if (!account.isPresent()) {
+                throw new RuntimeException("User not found");
+            }
             String tokenId = claims.getId();
             String email = claims.getSubject();
-            Long accountId = claims.get("accountId", Long.class);
-            List<String> roles = claims.get("roles", List.class);
 
             refreshTokenRepository.deleteByToken(tokenId);
+
+            List<String> roles = account.get().getRoles().stream()
+                    .map(Enum::name)
+                    .toList();
 
             String newAccessToken = generateAccessToken(email, accountId, roles);
             String newRefreshToken = generateRefreshToken(email, accountId, roles);
 
-            return new AuthResponseDTO(newAccessToken, newRefreshToken);
+            return Optional.of(new AuthResponseDTO(newAccessToken, newRefreshToken));
 
         } catch (ExpiredJwtException e) {
             throw new InternalAuthenticationServiceException("Refresh token expired");
@@ -158,5 +168,14 @@ public class TokenService {
     @Transactional
     public void cleanupExpiredTokens() {
         refreshTokenRepository.deleteByExpiryDateBefore(LocalDateTime.now());
+    }
+
+    public Long getAccountIdFromToken(String token) {
+        Claims claims = Jwts.parser()
+                .setSigningKey(generateKey())
+                .parseClaimsJws(token)
+                .getBody();
+
+        return claims.get("accountId", Long.class);
     }
 }

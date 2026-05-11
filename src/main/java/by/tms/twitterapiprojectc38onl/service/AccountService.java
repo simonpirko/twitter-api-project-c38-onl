@@ -1,6 +1,7 @@
 package by.tms.twitterapiprojectc38onl.service;
 
 import by.tms.twitterapiprojectc38onl.dto.RegisterDTO;
+import by.tms.twitterapiprojectc38onl.dto.UpdateAccountDTO;
 import by.tms.twitterapiprojectc38onl.entity.Account;
 import by.tms.twitterapiprojectc38onl.entity.Role;
 import by.tms.twitterapiprojectc38onl.repository.AccountRepository;
@@ -50,4 +51,26 @@ public class AccountService implements UserDetailsService {
 
         throw new UsernameNotFoundException("User not found");
     }
+
+
+    public Account loadUserById(Long id) throws UsernameNotFoundException {
+        Optional<Account> byEmail = accountRepository.findById(id);
+
+        if (byEmail.isPresent()) {
+            return byEmail.get();
+        }
+
+        throw new UsernameNotFoundException("User not found");
+    }
+
+    public Account updateAccount(UpdateAccountDTO updateAccountDTO, Long id) {
+        Account account = this.loadUserById(id);
+        account.setUsername(updateAccountDTO.getUsername());
+        account.setEmail(updateAccountDTO.getEmail());
+
+        accountRepository.save(account);
+
+        return account;
+    }
+
 }
