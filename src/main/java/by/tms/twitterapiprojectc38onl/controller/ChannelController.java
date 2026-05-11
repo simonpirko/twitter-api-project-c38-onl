@@ -34,4 +34,12 @@ public class ChannelController {
         channelService.update(id, channelDTO);
         return ResponseEntity.status(HttpStatus.OK).build();
     }
+
+    @DeleteMapping("/{channel_id}")
+    ResponseEntity<Void> deleteChannel(@PathVariable(name = "channel_id") Long channelId,
+                                       @AuthenticationPrincipal Account account) {
+
+        channelService.delete(channelId, account);
+        return ResponseEntity.noContent().build();
+    }
 }
